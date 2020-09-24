@@ -145,6 +145,7 @@ func Provider() terraform.ResourceProvider {
 			"apsarastack_zones":                          dataSourceApsaraStackZones(),
 			"apsarastack_oss_buckets":                    dataSourceApsaraStackOssBuckets(),
 			"apsarastack_oss_bucket_objects":             dataSourceApsaraStackOssBucketObjects(),
+			"apsarastack_ess_scheduled_tasks":            dataSourceApsaraStackEssScheduledTasks(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"apsarastack_network_interface":                   resourceApsaraStackNetworkInterface(),
@@ -189,6 +190,7 @@ func Provider() terraform.ResourceProvider {
 			"apsarastack_slb_backend_server":                  resourceApsaraStackSlbBackendServer(),
 			"apsarastack_oss_bucket":                          resourceApsaraStackOssBucket(),
 			"apsarastack_oss_bucket_object":                   resourceApsaraStackOssBucketObject(),
+			"apsarastack_ess_scheduled_task":                  resourceApsaraStackEssScheduledTask(),
 		},
 
 		ConfigureFunc: providerConfigure,
@@ -226,8 +228,8 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		SkipRegionValidation: d.Get("skip_region_validation").(bool),
 		ConfigurationSource:  d.Get("configuration_source").(string),
 		Protocol:             d.Get("protocol").(string),
-		Insecure:             d.Get("insecure").(bool),
-		Proxy:                d.Get("proxy").(string),
+		//Insecure:             d.Get("insecure").(bool),
+		//Proxy:                d.Get("proxy").(string),
 	}
 	token := getProviderConfig(d.Get("security_token").(string), "sts_token")
 	config.SecurityToken = strings.TrimSpace(token)
@@ -275,7 +277,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	domain := d.Get("domain").(string)
 	if domain != "" {
 		config.EcsEndpoint = "ecs." + domain
-		config.VpcEndpoint = "vpc." + domain
+
 		config.StsEndpoint = "sts." + domain
 
 	} else {
@@ -285,7 +287,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		for _, endpointsSetI := range endpointsSet.List() {
 			endpoints := endpointsSetI.(map[string]interface{})
 			config.EcsEndpoint = strings.TrimSpace(endpoints["ecs"].(string))
-			config.VpcEndpoint = strings.TrimSpace(endpoints["vpc"].(string))
+
 			config.StsEndpoint = strings.TrimSpace(endpoints["sts"].(string))
 
 		}
