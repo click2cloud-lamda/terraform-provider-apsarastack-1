@@ -94,6 +94,8 @@ func resourceApsaraStackCRRepoCreate(d *schema.ResourceData, meta interface{}) e
 
 	request := cr.CreateCreateRepoRequest()
 	request.RegionId = client.RegionId
+	request.Headers = map[string]string{"RegionId": client.RegionId}
+	request.QueryParams = map[string]string{"AccessKeySecret": client.SecretKey, "Product": "cr"}
 	request.SetContent(serialized)
 
 	raw, err := client.WithCrClient(func(crClient *cr.Client) (interface{}, error) {

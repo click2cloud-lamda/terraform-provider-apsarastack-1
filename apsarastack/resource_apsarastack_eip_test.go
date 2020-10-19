@@ -85,6 +85,9 @@ func testSweepEips(region string) error {
 		}
 		log.Printf("[INFO] Deleting EIP: %s (%s)", name, id)
 		req := vpc.CreateReleaseEipAddressRequest()
+		req.Headers = map[string]string{"RegionId": client.RegionId}
+		req.QueryParams = map[string]string{"AccessKeySecret": client.SecretKey, "Product": "vpc"}
+
 		req.AllocationId = id
 		_, err := client.WithVpcClient(func(vpcClient *vpc.Client) (interface{}, error) {
 			return vpcClient.ReleaseEipAddress(req)

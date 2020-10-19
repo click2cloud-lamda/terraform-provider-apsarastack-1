@@ -54,6 +54,9 @@ func resourceApsaraStackCrEENamespaceCreate(d *schema.ResourceData, meta interfa
 	response := &cr_ee.CreateNamespaceResponse{}
 	request := cr_ee.CreateCreateNamespaceRequest()
 	request.RegionId = crService.client.RegionId
+	request.Headers = map[string]string{"RegionId": client.RegionId}
+	request.QueryParams = map[string]string{"AccessKeySecret": client.SecretKey, "Product": "cr"}
+	//request.PageSize = requests.NewInteger(PageSizeLarge)
 	request.InstanceId = instanceId
 	request.NamespaceName = namespace
 	request.AutoCreateRepo = requests.NewBoolean(autoCreate)

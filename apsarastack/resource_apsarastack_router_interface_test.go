@@ -37,6 +37,8 @@ func testSweepRouterInterfaces(region string) error {
 	var ris []vpc.RouterInterfaceType
 	req := vpc.CreateDescribeRouterInterfacesRequest()
 	req.RegionId = client.RegionId
+	req.Headers = map[string]string{"RegionId": client.RegionId}
+	req.QueryParams = map[string]string{"AccessKeySecret": client.SecretKey, "Product": "vpc"}
 	req.PageSize = requests.NewInteger(PageSizeLarge)
 	req.PageNumber = requests.NewInteger(1)
 	for {
@@ -86,6 +88,8 @@ func testSweepRouterInterfaces(region string) error {
 		log.Printf("[INFO] Deleting Router Interface: %s (%s)", name, id)
 		req := vpc.CreateDeleteRouterInterfaceRequest()
 		req.RouterInterfaceId = id
+		req.Headers = map[string]string{"RegionId": client.RegionId}
+		req.QueryParams = map[string]string{"AccessKeySecret": client.SecretKey, "Product": "vpc"}
 		_, err := client.WithVpcClient(func(vpcClient *vpc.Client) (interface{}, error) {
 			return vpcClient.DeleteRouterInterface(req)
 		})

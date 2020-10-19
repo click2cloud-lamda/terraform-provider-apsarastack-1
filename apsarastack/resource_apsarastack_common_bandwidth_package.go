@@ -68,6 +68,8 @@ func resourceApsaraStackCommonBandwidthPackageCreate(d *schema.ResourceData, met
 
 	request := vpc.CreateCreateCommonBandwidthPackageRequest()
 	request.RegionId = client.RegionId
+	request.Headers = map[string]string{"RegionId": client.RegionId}
+	request.QueryParams = map[string]string{"AccessKeySecret": client.SecretKey, "Product": "vpc"}
 
 	request.Bandwidth = requests.NewInteger(d.Get("bandwidth").(int))
 	request.Name = d.Get("name").(string)
@@ -137,6 +139,8 @@ func resourceApsaraStackCommonBandwidthPackageUpdate(d *schema.ResourceData, met
 	d.Partial(true)
 	update := false
 	request := vpc.CreateModifyCommonBandwidthPackageAttributeRequest()
+	request.Headers = map[string]string{"RegionId": client.RegionId}
+	request.QueryParams = map[string]string{"AccessKeySecret": client.SecretKey, "Product": "vpc"}
 	request.RegionId = client.RegionId
 	request.BandwidthPackageId = d.Id()
 	if d.HasChange("description") {

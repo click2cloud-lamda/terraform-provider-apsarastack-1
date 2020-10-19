@@ -72,6 +72,8 @@ func resourceApsaraStackCrEERepoCreate(d *schema.ResourceData, meta interface{})
 	response := &cr_ee.CreateRepositoryResponse{}
 	request := cr_ee.CreateCreateRepositoryRequest()
 	request.RegionId = crService.client.RegionId
+	request.Headers = map[string]string{"RegionId": client.RegionId}
+	request.QueryParams = map[string]string{"AccessKeySecret": client.SecretKey, "Product": "cr"}
 	request.InstanceId = instanceId
 	request.RepoNamespaceName = namespace
 	request.RepoName = repoName

@@ -170,6 +170,8 @@ func resourceApsaraStackRouterInterfaceUpdate(d *schema.ResourceData, meta inter
 		d.SetPartial("specification")
 		request := vpc.CreateModifyRouterInterfaceSpecRequest()
 		request.RegionId = string(client.Region)
+		request.Headers = map[string]string{"RegionId": client.RegionId}
+		request.QueryParams = map[string]string{"AccessKeySecret": client.SecretKey, "Product": "vpc"}
 		request.RouterInterfaceId = d.Id()
 		request.Spec = d.Get("specification").(string)
 		raw, err := client.WithVpcClient(func(vpcClient *vpc.Client) (interface{}, error) {
@@ -242,6 +244,8 @@ func resourceApsaraStackRouterInterfaceDelete(d *schema.ResourceData, meta inter
 
 	request := vpc.CreateDeleteRouterInterfaceRequest()
 	request.RegionId = string(client.Region)
+	request.Headers = map[string]string{"RegionId": client.RegionId}
+	request.QueryParams = map[string]string{"AccessKeySecret": client.SecretKey, "Product": "vpc"}
 	request.RouterInterfaceId = d.Id()
 	request.ClientToken = buildClientToken(request.GetActionName())
 	err := resource.Retry(5*time.Minute, func() *resource.RetryError {
@@ -279,6 +283,8 @@ func buildApsaraStackRouterInterfaceCreateArgs(d *schema.ResourceData, meta inte
 
 	request := vpc.CreateCreateRouterInterfaceRequest()
 	request.RegionId = client.RegionId
+	request.Headers = map[string]string{"RegionId": client.RegionId}
+	request.QueryParams = map[string]string{"AccessKeySecret": client.SecretKey, "Product": "vpc"}
 	request.RouterType = d.Get("router_type").(string)
 	request.RouterId = d.Get("router_id").(string)
 	request.Role = d.Get("role").(string)
@@ -308,6 +314,8 @@ func buildApsaraStackRouterInterfaceCreateArgs(d *schema.ResourceData, meta inte
 	// Get VBR access point
 	if request.RouterType == string(VBR) {
 		describeVirtualBorderRoutersRequest := vpc.CreateDescribeVirtualBorderRoutersRequest()
+		describeVirtualBorderRoutersRequest.Headers = map[string]string{"RegionId": client.RegionId}
+		describeVirtualBorderRoutersRequest.QueryParams = map[string]string{"AccessKeySecret": client.SecretKey, "Product": "vpc"}
 		values := []string{request.RouterId}
 		filters := []vpc.DescribeVirtualBorderRoutersFilter{{
 			Key:   "VbrId",
@@ -331,7 +339,7 @@ func buildApsaraStackRouterInterfaceCreateArgs(d *schema.ResourceData, meta inte
 }
 
 func buildApsaraStackRouterInterfaceModifyAttrArgs(d *schema.ResourceData, meta interface{}) (*vpc.ModifyRouterInterfaceAttributeRequest, bool, error) {
-
+	client := meta.(*connectivity.ApsaraStackClient)
 	sourceIp, sourceOk := d.GetOk("health_check_source_ip")
 	targetIp, targetOk := d.GetOk("health_check_target_ip")
 	if sourceOk && !targetOk || !sourceOk && targetOk {
@@ -339,6 +347,9 @@ func buildApsaraStackRouterInterfaceModifyAttrArgs(d *schema.ResourceData, meta 
 	}
 
 	request := vpc.CreateModifyRouterInterfaceAttributeRequest()
+	request.Headers = map[string]string{"RegionId": client.RegionId}
+	request.QueryParams = map[string]string{"AccessKeySecret": client.SecretKey, "Product": "vpc"}
+
 	request.RouterInterfaceId = d.Id()
 
 	attributeUpdate := false

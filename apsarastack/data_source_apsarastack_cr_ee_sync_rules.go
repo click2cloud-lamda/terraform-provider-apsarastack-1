@@ -166,6 +166,9 @@ func dataSourceApsaraStackCrEESyncRulesRead(d *schema.ResourceData, meta interfa
 		response := &cr_ee.ListRepoSyncRuleResponse{}
 		request := cr_ee.CreateListRepoSyncRuleRequest()
 		request.RegionId = crService.client.RegionId
+		request.Headers = map[string]string{"RegionId": client.RegionId}
+		request.QueryParams = map[string]string{"AccessKeySecret": client.SecretKey, "Product": "cr"}
+		request.PageSize = requests.NewInteger(PageSizeLarge)
 		request.InstanceId = instanceId
 		if namespaceName != "" {
 			request.NamespaceName = namespaceName

@@ -2,7 +2,6 @@ package apsarastack
 
 import (
 	"encoding/json"
-
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/cr"
@@ -53,6 +52,7 @@ func resourceApsaraStackCRNamespaceCreate(d *schema.ResourceData, meta interface
 	}
 
 	request := cr.CreateCreateNamespaceRequest()
+	request.QueryParams = map[string]string{"AccessKeySecret": client.SecretKey, "Product": "cr"}
 	request.SetContent(serialized)
 
 	raw, err := client.WithCrClient(func(crClient *cr.Client) (interface{}, error) {

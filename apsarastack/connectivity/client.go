@@ -747,10 +747,8 @@ func (client *ApsaraStackClient) WithOssClient(do func(*oss.Client) (interface{}
 		if err != nil {
 			return nil, fmt.Errorf("unable to initialize the OSS client: %#v", err)
 		}
-
 		client.ossconn = ossconn
 	}
-
 	return do(client.ossconn)
 }
 

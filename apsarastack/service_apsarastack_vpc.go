@@ -407,7 +407,10 @@ func (s *VpcService) DescribeRouterInterfaceConnection(id, regionId string) (ri 
 }
 
 func (s *VpcService) DescribeCenInstanceGrant(id string) (rule vpc.CbnGrantRule, err error) {
+	//client := meta.(*connectivity.ApsaraStackClient)
 	request := vpc.CreateDescribeGrantRulesToCenRequest()
+	//request.Headers = map[string]string{"RegionId": client.RegionId}
+	//request.QueryParams = map[string]string{"AccessKeySecret": client.SecretKey, "Product": "vpc"}
 	parts, err := ParseResourceId(id, 3)
 	if err != nil {
 		return rule, WrapError(err)
