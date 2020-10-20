@@ -7,6 +7,8 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/adb"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/bssopenapi"
 	cdn_new "github.com/aliyun/alibaba-cloud-sdk-go/services/cdn"
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/cr"
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/cr_ee"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/dds"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/elasticsearch"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ess"
@@ -70,6 +72,8 @@ type ApsaraStackClient struct {
 	rkvconn           *r_kvstore.Client
 	fcconn            *fc.Client
 	ddsconn           *dds.Client
+	creeconn          *cr_ee.Client
+	crconn            *cr.Client
 }
 
 const (
@@ -131,12 +135,14 @@ func (client *ApsaraStackClient) WithEcsClient(do func(*ecs.Client) (interface{}
 		//if _, err := ecsconn.DescribeRegions(ecs.CreateDescribeRegionsRequest()); err != nil {
 		//	return nil, err
 		//}
+		ecsconn.Domain = endpoint
 		ecsconn.AppendUserAgent(Terraform, terraformVersion)
 		ecsconn.AppendUserAgent(Provider, providerVersion)
 		ecsconn.AppendUserAgent(Module, client.config.ConfigurationSource)
 		ecsconn.SetHTTPSInsecure(client.config.Insecure)
 		if client.config.Proxy != "" {
 			ecsconn.SetHttpsProxy(client.config.Proxy)
+			ecsconn.SetHttpProxy(client.config.Proxy)
 		}
 		client.ecsconn = ecsconn
 	}
@@ -386,17 +392,21 @@ func (client *ApsaraStackClient) WithVpcClient(do func(*vpc.Client) (interface{}
 		if endpoint != "" {
 			endpoints.AddEndpointMapping(client.config.RegionId, string(VPCCode), endpoint)
 		}
+		if strings.HasPrefix(endpoint, "http") {
+			endpoint = strings.TrimPrefix(strings.TrimPrefix(endpoint, "http://"), "https://")
+		}
 		vpcconn, err := vpc.NewClientWithOptions(client.config.RegionId, client.getSdkConfig(), client.config.getAuthCredential(true))
 		if err != nil {
 			return nil, fmt.Errorf("unable to initialize the VPC client: %#v", err)
 		}
-
+		vpcconn.Domain = endpoint
 		vpcconn.AppendUserAgent(Terraform, terraformVersion)
 		vpcconn.AppendUserAgent(Provider, providerVersion)
 		vpcconn.AppendUserAgent(Module, client.config.ConfigurationSource)
 		vpcconn.SetHTTPSInsecure(client.config.Insecure)
 		if client.config.Proxy != "" {
 			vpcconn.SetHttpsProxy(client.config.Proxy)
+			vpcconn.SetHttpProxy(client.config.Proxy)
 		}
 		client.vpcconn = vpcconn
 	}
@@ -884,4 +894,56 @@ func (client *ApsaraStackClient) WithOssBucketByName(bucketName string, do func(
 		}
 		return do(bucket)
 	})
+}
+
+func (client *ApsaraStackClient) WithCrEEClient(do func(*cr_ee.Client) (interface{}, error)) (interface{}, error) {
+	// Initialize the CR EE client if necessary
+	if client.creeconn == nil {
+		endpoint := client.config.CrEndpoint
+		if endpoint == "" {
+			endpoint = loadEndpoint(client.config.RegionId, CRCode)
+			if endpoint == "" {
+				endpoint = fmt.Sprintf("cr.%s.aliyuncs.com", client.config.RegionId)
+			}
+		}
+		if endpoint != "" {
+			endpoints.AddEndpointMapping(client.config.RegionId, string(CRCode), endpoint)
+		}
+		creeconn, err := cr_ee.NewClientWithOptions(client.config.RegionId, client.getSdkConfig(), client.config.getAuthCredential(true))
+		if err != nil {
+			return nil, fmt.Errorf("unable to initialize the CR EE client: %#v", err)
+		}
+		creeconn.AppendUserAgent(Terraform, terraformVersion)
+		creeconn.AppendUserAgent(Provider, providerVersion)
+		creeconn.AppendUserAgent(Module, client.config.ConfigurationSource)
+		client.creeconn = creeconn
+	}
+
+	return do(client.creeconn)
+}
+
+func (client *ApsaraStackClient) WithCrClient(do func(*cr.Client) (interface{}, error)) (interface{}, error) {
+	// Initialize the CR client if necessary
+	if client.crconn == nil {
+		endpoint := client.config.CrEndpoint
+		if endpoint == "" {
+			endpoint = loadEndpoint(client.config.RegionId, CRCode)
+			if endpoint == "" {
+				endpoint = fmt.Sprintf("cr.%s.aliyuncs.com", client.config.RegionId)
+			}
+		}
+		if endpoint != "" {
+			endpoints.AddEndpointMapping(client.config.RegionId, string(CRCode), endpoint)
+		}
+		crconn, err := cr.NewClientWithOptions(client.config.RegionId, client.getSdkConfig(), client.config.getAuthCredential(true))
+		if err != nil {
+			return nil, fmt.Errorf("unable to initialize the CR client: %#v", err)
+		}
+		crconn.AppendUserAgent(Terraform, terraformVersion)
+		crconn.AppendUserAgent(Provider, providerVersion)
+		crconn.AppendUserAgent(Module, client.config.ConfigurationSource)
+		client.crconn = crconn
+	}
+
+	return do(client.crconn)
 }

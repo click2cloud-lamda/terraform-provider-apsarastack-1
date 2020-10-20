@@ -6,7 +6,6 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/slb"
 	"github.com/aliyun/terraform-provider-apsarastack/apsarastack/connectivity"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
 func dataSourceApsaraStackSlbZones() *schema.Resource {
@@ -14,18 +13,6 @@ func dataSourceApsaraStackSlbZones() *schema.Resource {
 		Read: dataSourceApsaraStackSlbZonesRead,
 
 		Schema: map[string]*schema.Schema{
-			"available_slb_address_type": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.StringInSlice([]string{"Vpc", "classic_intranet", "classic_internet"}, false),
-			},
-			"available_slb_address_ip_version": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.StringInSlice([]string{"ipv4", "ipv6"}, false),
-			},
 			"output_file": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -54,6 +41,11 @@ func dataSourceApsaraStackSlbZones() *schema.Resource {
 							Computed: true,
 							Elem:     &schema.Schema{Type: schema.TypeString},
 						},
+						"local_name": {
+							Type:     schema.TypeList,
+							Computed: true,
+							Elem:     &schema.Schema{Type: schema.TypeString},
+						},
 					},
 				},
 			},
@@ -64,30 +56,32 @@ func dataSourceApsaraStackSlbZones() *schema.Resource {
 func dataSourceApsaraStackSlbZonesRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*connectivity.ApsaraStackClient)
 	slaveZones := make(map[string][]string)
-
-	request := slb.CreateDescribeAvailableResourceRequest()
+	localName := make(map[string][]string)
+	request := slb.CreateDescribeZonesRequest()
 	request.RegionId = client.RegionId
-	if ipVersion, ok := d.GetOk("available_slb_address_ip_version"); ok {
-		request.AddressIPVersion = ipVersion.(string)
-	}
-	if addressType, ok := d.GetOk("available_slb_address_type"); ok {
-		request.AddressType = addressType.(string)
-	}
+
 	raw, err := client.WithSlbClient(func(slbClient *slb.Client) (interface{}, error) {
-		return slbClient.DescribeAvailableResource(request)
+		return slbClient.DescribeZones(request)
 	})
 	if err != nil {
 		return WrapErrorf(err, DataDefaultErrorMsg, "apsarastack_slb_zones", request.GetActionName(), ApsaraStackSdkGoERROR)
 	}
 	addDebug(request.GetActionName(), raw, request.RpcRequest, request)
-	response, _ := raw.(*slb.DescribeAvailableResourceResponse)
-	for _, resource := range response.AvailableResources.AvailableResource {
-		slaveIds := slaveZones[resource.MasterZoneId]
-		slaveIds = append(slaveIds, resource.SlaveZoneId)
-		if len(slaveIds) > 0 {
-			sort.Strings(slaveIds)
+
+	response, _ := raw.(*slb.DescribeZonesResponse)
+
+	for _, zone := range response.Zones.Zone {
+		slaveIds := []string{}
+		for _, slavezone := range zone.SlaveZones.SlaveZone {
+
+			slaveIds = append(slaveIds, slavezone.ZoneId)
+			if len(slaveIds) > 0 {
+				sort.Strings(slaveIds)
+			}
+
 		}
-		slaveZones[resource.MasterZoneId] = slaveIds
+		localName[zone.ZoneId] = []string{zone.LocalName}
+		slaveZones[zone.ZoneId] = slaveIds
 	}
 
 	var ids []string
@@ -103,6 +97,9 @@ func dataSourceApsaraStackSlbZonesRead(d *schema.ResourceData, meta interface{})
 		mapping := map[string]interface{}{"id": zoneId}
 		if len(slaveZones) > 0 {
 			mapping["slb_slave_zone_ids"] = slaveZones[zoneId]
+		}
+		if len(localName) > 0 {
+			mapping["local_name"] = localName[zoneId]
 		}
 		if !d.Get("enable_details").(bool) {
 			s = append(s, mapping)

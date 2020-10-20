@@ -77,7 +77,7 @@ func Provider() terraform.ResourceProvider {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
-				DefaultFunc: schema.EnvDefaultFunc("AS_INSECURE", nil),
+				DefaultFunc: schema.EnvDefaultFunc("APSARASTACK_INSECURE", nil),
 				Description: descriptions["insecure"],
 			},
 			"assume_role": assumeRoleSchema(),
@@ -89,7 +89,7 @@ func Provider() terraform.ResourceProvider {
 			"protocol": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Default:      "HTTPS",
+				Default:      "HTTP",
 				Description:  descriptions["protocol"],
 				ValidateFunc: validation.StringInSlice([]string{"HTTP", "HTTPS"}, false),
 			},
@@ -103,15 +103,18 @@ func Provider() terraform.ResourceProvider {
 			"proxy": {
 				Type:        schema.TypeString,
 				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("APSARASTACK_PROXY", nil),
 				Description: descriptions["proxy"],
 			},
 			"domain": {
 				Type:        schema.TypeString,
 				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("APSARASTACK_DOMAIN", nil),
 				Description: descriptions["domain"],
 			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
+			"apsarastack_ess_scaling_configurations":     dataSourceApsaraStackEssScalingConfigurations(),
 			"apsarastack_instances":                      dataSourceApsaraStackInstances(),
 			"apsarastack_disks":                          dataSourceApsaraStackDisks(),
 			"apsarastack_key_pairs":                      dataSourceApsaraStackKeyPairs(),
@@ -131,6 +134,7 @@ func Provider() terraform.ResourceProvider {
 			"apsarastack_slb_domain_extensions":          dataSourceApsaraStackSlbDomainExtensions(),
 			"apsarastack_slb_rules":                      dataSourceApsaraStackSlbRules(),
 			"apsarastack_route_tables":                   dataSourceApsaraStackRouteTables(),
+			"apsarastack_route_entries":                  dataSourceApsaraStackRouteEntries(),
 			"apsarastack_slb_master_slave_server_groups": dataSourceApsaraStackSlbMasterSlaveServerGroups(),
 			"apsarastack_slbs":                           dataSourceApsaraStackSlbs(),
 			"apsarastack_slb_zones":                      dataSourceApsaraStackSlbZones(),
@@ -141,12 +145,24 @@ func Provider() terraform.ResourceProvider {
 			"apsarastack_db_instances":                   dataSourceApsaraStackDBInstances(),
 			"apsarastack_db_zones":                       dataSourceApsaraStackDBZones(),
 			"apsarastack_slb_server_certificates":        dataSourceApsaraStackSlbServerCertificates(),
+			"apsarastack_slb_ca_certificates":            dataSourceApsaraStackSlbCACertificates(),
 			"apsarastack_slb_backend_servers":            dataSourceApsaraStackSlbBackendServers(),
 			"apsarastack_zones":                          dataSourceApsaraStackZones(),
 			"apsarastack_oss_buckets":                    dataSourceApsaraStackOssBuckets(),
 			"apsarastack_oss_bucket_objects":             dataSourceApsaraStackOssBucketObjects(),
+			"apsarastack_ess_scaling_groups":             dataSourceApsaraStackEssScalingGroups(),
+			"apsarastack_ess_scaling_rules":              dataSourceApsaraStackEssScalingRules(),
+			"apsarastack_router_interfaces":              dataSourceApsaraStackRouterInterfaces(),
+			"apsarastack_ess_scheduled_tasks":            dataSourceApsaraStackEssScheduledTasks(),
+			"apsarastack_cr_ee_instances":                dataSourceApsaraStackCrEEInstances(),
+			"apsarastack_cr_ee_namespaces":               dataSourceApsaraStackCrEENamespaces(),
+			"apsarastack_cr_ee_repos":                    dataSourceApsaraStackCrEERepos(),
+			"apsarastack_cr_ee_sync_rules":               dataSourceApsaraStackCrEESyncRules(),
+			"apsarastack_cr_namespaces":                  dataSourceApsaraStackCRNamespaces(),
+			"apsarastack_cr_repos":                       dataSourceApsaraStackCRRepos(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
+			"apsarastack_ess_scaling_configuration":           resourceApsaraStackEssScalingConfiguration(),
 			"apsarastack_network_interface":                   resourceApsaraStackNetworkInterface(),
 			"apsarastack_network_interface_attachment":        resourceNetworkInterfaceAttachment(),
 			"apsarastack_disk":                                resourceApsaraStackDisk(),
@@ -173,10 +189,11 @@ func Provider() terraform.ResourceProvider {
 			"apsarastack_slb_listener":                        resourceApsaraStackSlbListener(),
 			"apsarastack_slb_server_group":                    resourceApsaraStackSlbServerGroup(),
 			"apsarastack_slb_acl":                             resourceApsaraStackSlbAcl(),
-			"apsarastack_slb_domain_extensions":               resourceApsaraStackSlbDomainExtension(),
+			"apsarastack_slb_domain_extension":                resourceApsaraStackSlbDomainExtension(),
 			"apsarastack_slb_rule":                            resourceApsaraStackSlbRule(),
 			"apsarastack_route_table":                         resourceApsaraStackRouteTable(),
 			"apsarastack_route_table_attachment":              resourceApsaraStackRouteTableAttachment(),
+			"apsarastack_route_entry":                         resourceApsaraStackRouteEntry(),
 			"apsarastack_slb_master_slave_server_group":       resourceApsaraStackSlbMasterSlaveServerGroup(),
 			"apsarastack_slb":                                 resourceApsaraStackSlb(),
 			"apsarastack_common_bandwidth_package":            resourceApsaraStackCommonBandwidthPackage(),
@@ -185,12 +202,31 @@ func Provider() terraform.ResourceProvider {
 			"apsarastack_nat_gateway":                         resourceApsaraStackNatGateway(),
 			"apsarastack_snat_entry":                          resourceApsaraStackSnatEntry(),
 			"apsarastack_db_instance":                         resourceApsaraStackDBInstance(),
+			"apsarastack_db_account":                          resourceApsaraStackDBAccount(),
+			"apsarastack_db_account_privilege":                resourceApsaraStackDBAccountPrivilege(),
+			"apsarastack_db_backup_policy":                    resourceApsaraStackDBBackupPolicy(),
+			"apsarastack_db_connection":                       resourceApsaraStackDBConnection(),
+			"apsarastack_db_database":                         resourceApsaraStackDBDatabase(),
+			"apsarastack_db_read_write_splitting_connection":  resourceApsaraStackDBReadWriteSplittingConnection(),
+			"apsarastack_db_readonly_instance":                resourceApsaraStackDBReadonlyInstance(),
 			"apsarastack_slb_server_certificate":              resourceApsaraStackSlbServerCertificate(),
+			"apsarastack_slb_ca_certificate":                  resourceApsaraStackSlbCACertificate(),
 			"apsarastack_slb_backend_server":                  resourceApsaraStackSlbBackendServer(),
 			"apsarastack_oss_bucket":                          resourceApsaraStackOssBucket(),
 			"apsarastack_oss_bucket_object":                   resourceApsaraStackOssBucketObject(),
+			"apsarastack_ess_lifecycle_hook":                  resourceApsaraStackEssLifecycleHook(),
+			"apsarastack_ess_scaling_group":                   resourceApsaraStackEssScalingGroup(),
+			"apsarastack_ess_scaling_rule":                    resourceApsaraStackEssScalingRule(),
+			"apsarastack_router_interface":                    resourceApsaraStackRouterInterface(),
+			"apsarastack_router_interface_connection":         resourceApsaraStackRouterInterfaceConnection(),
+			"apsarastack_ess_scheduled_task":                  resourceApsaraStackEssScheduledTask(),
+			"apsarastack_ess_scalinggroup_vserver_groups":     resourceApsaraStackEssScalingGroupVserverGroups(),
+			"apsarastack_cr_ee_namespace":                     resourceApsaraStackCrEENamespace(),
+			"apsarastack_cr_ee_repo":                          resourceApsaraStackCrEERepo(),
+			"apsarastack_cr_ee_sync_rule":                     resourceApsaraStackCrEESyncRule(),
+			"apsarastack_cr_namespace":                        resourceApsaraStackCRNamespace(),
+			"apsarastack_cr_repo":                             resourceApsaraStackCRRepo(),
 		},
-
 		ConfigureFunc: providerConfigure,
 	}
 }
@@ -276,7 +312,11 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	if domain != "" {
 		config.EcsEndpoint = "ecs." + domain
 		config.VpcEndpoint = "vpc." + domain
+		config.SlbEndpoint = "slb." + domain
+		config.OssEndpoint = "oss." + domain
 		config.StsEndpoint = "sts." + domain
+		config.RdsEndpoint = "rds." + domain
+		config.CrEndpoint = "cr." + domain
 
 	} else {
 
@@ -287,6 +327,10 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 			config.EcsEndpoint = strings.TrimSpace(endpoints["ecs"].(string))
 			config.VpcEndpoint = strings.TrimSpace(endpoints["vpc"].(string))
 			config.StsEndpoint = strings.TrimSpace(endpoints["sts"].(string))
+			config.RdsEndpoint = strings.TrimSpace(endpoints["rds"].(string))
+			config.OssEndpoint = strings.TrimSpace(endpoints["oss"].(string))
+			config.StsEndpoint = strings.TrimSpace(endpoints["slb"].(string))
+			config.StsEndpoint = strings.TrimSpace(endpoints["cr"].(string))
 
 		}
 	}
