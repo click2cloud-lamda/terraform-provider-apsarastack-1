@@ -217,17 +217,21 @@ func (client *ApsaraStackClient) WithEssClient(do func(*ess.Client) (interface{}
 		if endpoint != "" {
 			endpoints.AddEndpointMapping(client.config.RegionId, string(ESSCode), endpoint)
 		}
+		if strings.HasPrefix(endpoint, "http") {
+			endpoint = strings.TrimPrefix(strings.TrimPrefix(endpoint, "http://"), "https://")
+		}
 		essconn, err := ess.NewClientWithOptions(client.config.RegionId, client.getSdkConfig(), client.config.getAuthCredential(true))
 		if err != nil {
 			return nil, fmt.Errorf("unable to initialize the ESS client: %#v", err)
 		}
-
+		essconn.Domain = endpoint
 		essconn.AppendUserAgent(Terraform, terraformVersion)
 		essconn.AppendUserAgent(Provider, providerVersion)
 		essconn.AppendUserAgent(Module, client.config.ConfigurationSource)
 		essconn.SetHTTPSInsecure(client.config.Insecure)
 		if client.config.Proxy != "" {
 			essconn.SetHttpsProxy(client.config.Proxy)
+			essconn.SetHttpProxy(client.config.Proxy)
 		}
 		client.essconn = essconn
 	}
@@ -427,13 +431,14 @@ func (client *ApsaraStackClient) WithSlbClient(do func(*slb.Client) (interface{}
 		if err != nil {
 			return nil, fmt.Errorf("unable to initialize the SLB client: %#v", err)
 		}
-
+		slbconn.Domain = endpoint
 		slbconn.AppendUserAgent(Terraform, terraformVersion)
 		slbconn.AppendUserAgent(Provider, providerVersion)
 		slbconn.AppendUserAgent(Module, client.config.ConfigurationSource)
 		slbconn.SetHTTPSInsecure(client.config.Insecure)
 		if client.config.Proxy != "" {
 			slbconn.SetHttpsProxy(client.config.Proxy)
+			slbconn.SetHttpProxy(client.config.Proxy)
 		}
 		client.slbconn = slbconn
 	}
@@ -508,7 +513,11 @@ func (client *ApsaraStackClient) describeEndpointForService(serviceCode string) 
 
 func (client *ApsaraStackClient) NewCommonRequest(product, serviceCode, schema string, apiVersion ApiVersion) (*requests.CommonRequest, error) {
 	request := requests.NewCommonRequest()
-	endpoint := loadEndpoint(client.RegionId, ServiceCode(strings.ToUpper(product)))
+	endpoint := client.config.SlbEndpoint
+	if endpoint == "" {
+		endpoint = loadEndpoint(client.RegionId, ServiceCode(strings.ToUpper(product)))
+	}
+
 	if endpoint == "" {
 		endpointItem, err := client.describeEndpointForService(serviceCode)
 		if err != nil {
@@ -705,7 +714,7 @@ func (client *ApsaraStackClient) WithOssClient(do func(*oss.Client) (interface{}
 
 	// Initialize the OSS client if necessary
 	if client.ossconn == nil {
-		schma := "https"
+		schma := "http"
 		endpoint := client.config.OssEndpoint
 		if endpoint == "" {
 			endpoint = loadEndpoint(client.config.RegionId, OSSCode)
@@ -717,7 +726,7 @@ func (client *ApsaraStackClient) WithOssClient(do func(*oss.Client) (interface{}
 					// HTTP or HTTPS
 					schma = strings.ToLower(endpointItem.Protocols.Protocols[0])
 					for _, p := range endpointItem.Protocols.Protocols {
-						if strings.ToLower(p) == "https" {
+						if strings.ToLower(p) == "http" {
 							schma = strings.ToLower(p)
 							break
 						}
@@ -735,6 +744,9 @@ func (client *ApsaraStackClient) WithOssClient(do func(*oss.Client) (interface{}
 		clientOptions := []oss.ClientOption{oss.UserAgent(client.getUserAgent()),
 			oss.SecurityToken(client.config.SecurityToken)}
 		proxy, err := client.getHttpProxy()
+		if client.config.Proxy != "" {
+			clientOptions = append(clientOptions, oss.Proxy(client.config.Proxy))
+		}
 		if proxy != nil {
 			skip, err := client.skipProxy(endpoint)
 			if err != nil {
@@ -744,6 +756,7 @@ func (client *ApsaraStackClient) WithOssClient(do func(*oss.Client) (interface{}
 				clientOptions = append(clientOptions, oss.Proxy(proxy.String()))
 			}
 		}
+		clientOptions = append(clientOptions, oss.UseCname(false))
 
 		ossconn, err := oss.New(endpoint, client.config.AccessKey, client.config.SecretKey, clientOptions...)
 		if err != nil {
