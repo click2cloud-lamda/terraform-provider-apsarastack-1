@@ -5,6 +5,7 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/endpoints"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/adb"
+	officalCS "github.com/aliyun/alibaba-cloud-sdk-go/services/cs"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/bssopenapi"
 	cdn_new "github.com/aliyun/alibaba-cloud-sdk-go/services/cdn"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/cr"
@@ -74,6 +75,7 @@ type ApsaraStackClient struct {
 	ddsconn           *dds.Client
 	creeconn          *cr_ee.Client
 	crconn            *cr.Client
+	officalCSConn     *officalCS.Client
 }
 
 const (
@@ -959,4 +961,31 @@ func (client *ApsaraStackClient) WithCrClient(do func(*cr.Client) (interface{}, 
 	}
 
 	return do(client.crconn)
+}
+
+func (client *ApsaraStackClient) WithOfficalCSClient(do func(*officalCS.Client) (interface{}, error)) (interface{}, error) {
+	goSdkMutex.Lock()
+	defer goSdkMutex.Unlock()
+
+	// Initialize the CS client if necessary
+	if client.officalCSConn == nil {
+		endpoint := client.config.CsEndpoint
+		if endpoint == "" {
+			endpoint = loadEndpoint(client.config.RegionId, CONTAINCode)
+		}
+		if endpoint != "" {
+			endpoints.AddEndpointMapping(client.config.RegionId, string(CONTAINCode), endpoint)
+		}
+		csconn, err := officalCS.NewClientWithOptions(client.config.RegionId, client.getSdkConfig(), client.config.getAuthCredential(true))
+		if err != nil {
+			return nil, fmt.Errorf("unable to initialize the CS client: %#v", err)
+		}
+
+		csconn.AppendUserAgent(Terraform, terraformVersion)
+		csconn.AppendUserAgent(Provider, providerVersion)
+		csconn.AppendUserAgent(Module, client.config.ConfigurationSource)
+		client.officalCSConn = csconn
+	}
+
+	return do(client.officalCSConn)
 }

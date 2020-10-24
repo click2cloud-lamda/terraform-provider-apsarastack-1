@@ -162,6 +162,9 @@ func Provider() terraform.ResourceProvider {
 			"apsarastack_cr_ee_sync_rules":               dataSourceApsaraStackCrEESyncRules(),
 			"apsarastack_cr_namespaces":                  dataSourceApsaraStackCRNamespaces(),
 			"apsarastack_cr_repos":                       dataSourceApsaraStackCRRepos(),
+			"apsarastack_cs_kubernetes_clusters":            dataSourceApsaraStackCSKubernetesClusters(),
+			"apsarastack_cs_managed_kubernetes_clusters":    dataSourceApsaraStackCSManagerKubernetesClusters(),
+			"apsarastack_cs_serverless_kubernetes_clusters": dataSourceApsaraStackCSServerlessKubernetesClusters(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"apsarastack_ess_scaling_configuration":           resourceApsaraStackEssScalingConfiguration(),
@@ -229,6 +232,10 @@ func Provider() terraform.ResourceProvider {
 			"apsarastack_cr_ee_sync_rule":                     resourceApsaraStackCrEESyncRule(),
 			"apsarastack_cr_namespace":                        resourceApsaraStackCRNamespace(),
 			"apsarastack_cr_repo":                             resourceApsaraStackCRRepo(),
+			"apsarastack_cs_kubernetes":                       resourceApsaraStackCSKubernetes(),
+			"apsarastack_cs_managed_kubernetes":               resourceApsaraStackCSManagedKubernetes(),
+			"apsarastack_cs_serverless_kubernetes":            resourceApsaraStackCSServerlessKubernetes(),
+			"apsarastack_cs_kubernetes_autoscaler":            resourceApsaraStackCSKubernetesAutoscaler(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
