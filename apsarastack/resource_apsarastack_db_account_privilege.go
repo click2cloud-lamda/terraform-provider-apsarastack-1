@@ -117,6 +117,8 @@ func resourceApsaraStackDBAccountPrivilegeRead(d *schema.ResourceData, meta inte
 		request := rds.CreateDescribeDatabasesRequest()
 		request.RegionId = client.RegionId
 		request.DBInstanceId = object.DBInstanceId
+		request.Headers = map[string]string{"RegionId": string(client.RegionId)}
+		request.QueryParams = map[string]string{"AccessKeySecret": client.SecretKey, "Product": "rds"}
 
 		err = resource.Retry(5*time.Minute, func() *resource.RetryError {
 			raw, err := client.WithRdsClient(func(rdsClient *rds.Client) (interface{}, error) {
