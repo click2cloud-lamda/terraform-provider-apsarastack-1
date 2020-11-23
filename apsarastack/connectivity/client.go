@@ -24,6 +24,7 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/rds"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/slb"
 	slsPop "github.com/aliyun/alibaba-cloud-sdk-go/services/sls"
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/yundun_bastionhost"
 	sls "github.com/aliyun/aliyun-log-go-sdk"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/aliyun/fc-go-sdk"
@@ -87,6 +88,7 @@ type ApsaraStackClient struct {
 	dnsconn           *alidns.Client
 	creeconn          *cr_ee.Client
 	crconn            *cr.Client
+	bastionhostconn   *yundun_bastionhost.Client
 }
 
 const (
@@ -1171,4 +1173,19 @@ func (client *ApsaraStackClient) WithDnsClient(do func(*alidns.Client) (interfac
 	}
 
 	return do(client.dnsconn)
+}
+func (client *ApsaraStackClient) WithBastionhostClient(do func(*yundun_bastionhost.Client) (interface{}, error)) (interface{}, error) {
+	if client.bastionhostconn == nil {
+		bastionhostconn, err := yundun_bastionhost.NewClientWithOptions(client.config.RegionId, client.getSdkConfig(), client.config.getAuthCredential(true))
+		if err != nil {
+			return nil, fmt.Errorf("unable to initialize the BASTIONHOST client: %#v", err)
+		}
+
+		bastionhostconn.AppendUserAgent(Terraform, terraformVersion)
+		bastionhostconn.AppendUserAgent(Provider, providerVersion)
+		bastionhostconn.AppendUserAgent(Module, client.config.ConfigurationSource)
+		client.bastionhostconn = bastionhostconn
+	}
+
+	return do(client.bastionhostconn)
 }

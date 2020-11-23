@@ -191,8 +191,9 @@ func Provider() terraform.ResourceProvider {
 			"apsarastack_kvstore_instance_engines": dataSourceApsaraStackKVStoreInstanceEngines(),
 
 			//"apsarastack_ascm_organizations":           dataSourceApsaraStackAscmOrganizations(),
-			"apsarastack_ascm_resource_groups": dataSourceApsaraStackAscmResourceGroups(),
-			"apsarastack_gpdb_instances":       dataSourceApsaraStackGpdbInstances(),
+			"apsarastack_ascm_resource_groups":         dataSourceApsaraStackAscmResourceGroups(),
+			"apsarastack_gpdb_instances":               dataSourceApsaraStackGpdbInstances(),
+			"apsarastack_yundun_bastionhost_instances": dataSourceApsaraStackBastionhostInstances(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"apsarastack_ess_scaling_configuration":           resourceApsaraStackEssScalingConfiguration(),
@@ -278,12 +279,12 @@ func Provider() terraform.ResourceProvider {
 			"apsarastack_dns_domain":                          resourceApsaraStackDnsDomain(),
 			"apsarastack_dns_domain_attachment":               resourceApsaraStackDnsDomainAttachment(),
 
-			"apsarastack_kvstore_instance":      resourceApsaraStackKVStoreInstance(),
-			"apsarastack_kvstore_backup_policy": resourceApsaraStackKVStoreBackupPolicy(),
-			"apsarastack_kvstore_account":       resourceApsaraStackKVstoreAccount(),
-			"apsarastack_gpdb_instance":         resourceApsaraStackGpdbInstance(),
-			"apsarastack_gpdb_connection":       resourceApsaraStackGpdbConnection(),
-
+			"apsarastack_kvstore_instance":            resourceApsaraStackKVStoreInstance(),
+			"apsarastack_kvstore_backup_policy":       resourceApsaraStackKVStoreBackupPolicy(),
+			"apsarastack_kvstore_account":             resourceApsaraStackKVstoreAccount(),
+			"apsarastack_gpdb_instance":               resourceApsaraStackGpdbInstance(),
+			"apsarastack_gpdb_connection":             resourceApsaraStackGpdbConnection(),
+			"apsarastack_yundun_bastionhost_instance": resourceApsaraStackBastionhostInstance(),
 			//"apsarastack_ascm_organization":                 		resourceApsaraStackAscmOrganization(),
 		},
 		ConfigureFunc: providerConfigure,
