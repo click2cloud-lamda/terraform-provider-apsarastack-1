@@ -389,6 +389,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 		config.AscmEndpoint = domain
 		config.GpdbEndpoint = domain
+		config.BssOpenApiEndpoint = domain
 
 	} else {
 
@@ -413,6 +414,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 			config.AscmEndpoint = strings.TrimSpace(endpoints["ascm"].(string))
 			config.GpdbEndpoint = strings.TrimSpace(endpoints["gpdb"].(string))
+			config.BssOpenApiEndpoint = strings.TrimSpace(endpoints["bssopenapi"].(string))
 
 		}
 	}
